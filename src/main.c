@@ -1,35 +1,59 @@
-#include "pico/stdlib.h"
 #include "kraken_scheduler.h"
-#include "kraken_hal.h"
+#include "stackctrl.h"
+#include "runtime.h"
+#include "repl.h"
+#include "compile.h"
+#include "pyexec.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #define PICO_DEFAULT_LED_PIN 25
 
-static void led_blink(void *parameters) {
+/* Task to run MicroPython */
+void mp_task(void *pvParameters) {
+    mp_stack_ctrl_init();
+    mp_stack_set_limit(10240);
+    mp_stack_ctrl_init();
+
+    gc_init((void *)0x20000000, (void *)0x20002000);
+    mp_init();
+    mp_obj_list_init(mp_sys_path, 0);
+    mp_obj_list_init(mp_sys_argv, 0);
+
+    printf("MicroPython loaded...\n");
+
+    // Run the REPL
+    pyexec_friendly_repl();
+
+    // Cleanup
+    mp_deinit();
+    vTaskDelete(NULL);
+}
+
+void led_blink_task(void *parameters) {
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
     while (1) {
-        vTaskDelay(500);
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
-        vTaskDelay(500);
+        vTaskDelay(pdMS_TO_TICKS(500));
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
 int main(void) {
     stdio_init_all();
-    kraken_uart_init(115200);
 
-    kraken_uart_write("Starting Kraken Machine...\n");
-    printf("Starting Kraken Machine...\n");
+    // Create LED blink task
+    kraken_create_task(led_blink_task, "LED Blink", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 
-    /* Create LED blink task using KrakenScheduler */
-    kraken_create_task(led_blink, "LED Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+    // Create MicroPython REPL task
+    kraken_create_task(mp_task, "MicroPython REPL", 8192, NULL, tskIDLE_PRIORITY + 2, NULL);
 
-    /* Start the scheduler */
+    // Start the FreeRTOS scheduler
     vTaskStartScheduler();
 
-    /* Should never reach here */
-    panic_unsupported();
+    while (1); // Should never reach here
 }
