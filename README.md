@@ -1,6 +1,4 @@
-Here’s a detailed and professional `README.md` file for your Kraken Machine Firmware GitHub repository:
 
-```markdown
 # Kraken Machine Firmware
 
 The **Kraken Machine Firmware** is a modular and extensible firmware designed for the Kraken Machine, a custom hardware platform inspired by devices like the Flipper Zero. The firmware integrates the **FreeRTOS** real-time operating system and a custom scheduler (`KrakenMachineScheduler`) to manage tasks, hardware abstractions, and advanced functionalities.
