@@ -9,6 +9,13 @@ include(FreeRTOS_Kernel_import.cmake)
 
 # Project name
 project(KrakenMachineFirmware)
+
+set(PICO_BOARD pico2)
+#set(PICO_PLATFORM rp2350-arm-s)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 26)
+set(PICO_CXX_ENABLE_EXCEPTIONS 1)
+
 pico_sdk_init()
 
 # Configuration projects
