@@ -3,26 +3,18 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
+#include "timers.h"
 #include "semphr.h"
 
-// Task management
-typedef struct {
-    TaskHandle_t handle;
-    const char* name;
-    UBaseType_t priority;
-    uint16_t stackSize;
-} KrakenTask;
+/* Task creation wrapper */
+BaseType_t kraken_create_task(TaskFunction_t pxTaskCode, const char *pcName, uint16_t usStackDepth, void *pvParameters, UBaseType_t uxPriority, TaskHandle_t *pxCreatedTask);
 
-// Task creation
-KrakenTask* kraken_create_task(void (*taskFunction)(void*), const char* name, uint16_t stackSize, void* params, UBaseType_t priority);
+/* Idle and Timer Task Memory Allocation Hooks */
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize);
 
-// IPC mechanisms
-QueueHandle_t kraken_create_queue(UBaseType_t queueLength, UBaseType_t itemSize);
-BaseType_t kraken_send_message(QueueHandle_t queue, void* message, TickType_t timeout);
-BaseType_t kraken_receive_message(QueueHandle_t queue, void* buffer, TickType_t timeout);
-
-// Timer utilities
-TimerHandle_t kraken_create_timer(const char* name, TickType_t period, BaseType_t autoReload, void* id, TimerCallbackFunction_t callback);
+/* FreeRTOS Hook Functions */
+void vApplicationMallocFailedHook(void);
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName);
 
 #endif // KRAKEN_SCHEDULER_H

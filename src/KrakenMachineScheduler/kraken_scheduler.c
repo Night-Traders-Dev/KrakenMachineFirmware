@@ -1,33 +1,44 @@
 #include "kraken_scheduler.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-KrakenTask* kraken_create_task(void (*taskFunction)(void*), const char* name, uint16_t stackSize, void* params, UBaseType_t priority) {
-    KrakenTask* task = pvPortMalloc(sizeof(KrakenTask));
-    if (task == NULL) return NULL;
+/* Static allocation for the Idle task */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
 
-    task->name = name;
-    task->priority = priority;
-    task->stackSize = stackSize;
+/* Static allocation for the Timer task */
+static StaticTask_t xTimerTaskTCBBuffer;
+static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
 
-    if (xTaskCreate(taskFunction, name, stackSize, params, priority, &task->handle) != pdPASS) {
-        vPortFree(task);
-        return NULL;
-    }
-
-    return task;
+/* Task creation wrapper */
+BaseType_t kraken_create_task(TaskFunction_t pxTaskCode, const char *pcName, uint16_t usStackDepth, void *pvParameters, UBaseType_t uxPriority, TaskHandle_t *pxCreatedTask) {
+    return xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
 }
 
-QueueHandle_t kraken_create_queue(UBaseType_t queueLength, UBaseType_t itemSize) {
-    return xQueueCreate(queueLength, itemSize);
+/* Idle Task Memory Allocation Hook */
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+    *ppxIdleTaskStackBuffer = xIdleStack;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
-BaseType_t kraken_send_message(QueueHandle_t queue, void* message, TickType_t timeout) {
-    return xQueueSend(queue, message, timeout);
+/* Timer Task Memory Allocation Hook */
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
+    *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
+    *ppxTimerTaskStackBuffer = xTimerStack;
+    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 
-BaseType_t kraken_receive_message(QueueHandle_t queue, void* buffer, TickType_t timeout) {
-    return xQueueReceive(queue, buffer, timeout);
+/* Malloc Failed Hook */
+void vApplicationMallocFailedHook(void) {
+    panic("malloc failed");
 }
 
-TimerHandle_t kraken_create_timer(const char* name, TickType_t period, BaseType_t autoReload, void* id, TimerCallbackFunction_t callback) {
-    return xTimerCreate(name, period, autoReload, id, callback);
+/* Stack Overflow Hook */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
+    (void)pcTaskName;
+    (void)xTask;
+
+    /* Infinite loop to halt execution */
+    for (;;);
 }
