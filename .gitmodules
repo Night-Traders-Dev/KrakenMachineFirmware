@@ -1,0 +1,4 @@
+[submodule "freertos"]
+        path = freertos
+        url = https://github.com/raspberrypi/FreeRTOS-Kernel
+        branch = smp
