@@ -33,6 +33,10 @@ target_link_libraries(KrakenMachineFirmware PRIVATE
     FreeRTOS-Kernel-Heap4
 )
 
+# enable usb output, disable uart output
+pico_enable_stdio_usb(KrakenMachineFirmware 1)
+pico_enable_stdio_uart(KrakenMachineFirmware 0)
+
 target_compile_options(KrakenMachineFirmware PRIVATE -Wall)
 
 pico_add_extra_outputs(KrakenMachineFirmware)
