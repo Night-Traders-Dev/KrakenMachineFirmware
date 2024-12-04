@@ -1,4 +1,3 @@
-/* Kernel includes. */
 #include "FreeRTOS.h" /* Must come first. */
 #include "task.h"     /* RTOS task related API prototypes. */
 #include "queue.h"    /* RTOS queue related API prototypes. */
@@ -10,7 +9,15 @@
 
 #include "pico/stdlib.h"
 
+
+
 #define PICO_DEFAULT_LED_PIN 25
+/* Static allocation for the Idle task */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+/* Static allocation for the Timer task */
+static StaticTask_t xTimerTaskTCBBuffer;
+static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
 
 static void led_blink (void *paramster)
 {
@@ -19,7 +26,7 @@ static void led_blink (void *paramster)
 
     while(1)
     {
-        printf("LED");
+        printf("LED\n");
         vTaskDelay(500);
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
         vTaskDelay(500);
@@ -27,19 +34,11 @@ static void led_blink (void *paramster)
     }
 }
 
-/* Static allocation for the Idle task */
-static StaticTask_t xIdleTaskTCBBuffer;
-static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
-
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
     *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
     *ppxIdleTaskStackBuffer = xIdleStack;
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
-
-/* Static allocation for the Timer task */
-static StaticTask_t xTimerTaskTCBBuffer;
-static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
 
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
     *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
