@@ -19,27 +19,12 @@ static void led_blink (void *paramster)
 
     while(1)
     {
+        printf("LED");
         vTaskDelay(500);
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
         vTaskDelay(500);
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
     }
-}
-
-int main(void)
-{
-    stdio_init_all();
-
-    printf("FreeRTOS SMP Template for Raspberry Pi Pico Board\n");
-
-    /* Create a simple example task */
-    xTaskCreate(led_blink, "led", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-
-    /* Start the tasks and timer running. */
-    vTaskStartScheduler();
-
-    /* should never reach here */
-    panic_unsupported();
 }
 
 /* Static allocation for the Idle task */
@@ -75,3 +60,18 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
 
     for( ;; );
 }
+
+
+int main(void)
+{
+    stdio_init_all();
+
+    xTaskCreate(led_blink, "led", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+
+    /* Start the tasks and timer running. */
+    vTaskStartScheduler();
+
+    /* should never reach here */
+    panic_unsupported();
+}
+
