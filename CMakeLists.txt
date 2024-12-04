@@ -29,6 +29,7 @@ target_include_directories(KrakenMachineFirmware PUBLIC src/KrakenMachineSchedul
 
 add_library(KrakenMachineScheduler
     src/KrakenMachineScheduler/kraken_scheduler.c
+    src/KrakenMachineScheduler/kraken_hal.c
 )
 target_include_directories(KrakenMachineScheduler PRIVATE
     include/
