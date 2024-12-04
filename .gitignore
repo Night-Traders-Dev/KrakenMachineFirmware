@@ -1,1 +1,4 @@
 build/
+*.bak
+include/*.bak
+src/*.bak
