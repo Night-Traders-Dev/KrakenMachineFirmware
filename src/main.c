@@ -1,7 +1,10 @@
 #include "kraken_scheduler.h"
+#include "bsp/board.h"
+#include "tusb.h"
+#include "usb_msc.h"
+#include "pico/stdlib.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "pico/stdlib.h"
 
 #define PICO_DEFAULT_LED_PIN 25
 #define EVENT_LED_ON_BIT (1 << 0)
@@ -60,9 +63,18 @@ void runtime_stats_task(void *parameters) {
     }
 }
 
+void usb_task(void *parameters) {
+    while (1) {
+        tud_task(); // TinyUSB device task
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
 int main(void) {
     /* Initialize stdio */
     stdio_init_all();
+    board_init();
+    tusb_init();
 
     /* Initialize the Kraken log system */
     kraken_log("Initializing Kraken Machine Firmware...");
@@ -77,6 +89,7 @@ int main(void) {
     kraken_create_task(led_blink_task, "LED Blink", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
     kraken_create_task(controller_task, "Controller", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
     kraken_create_task(runtime_stats_task, "Runtime Stats", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 1, NULL);
+    kraken_create_task(usb_task, "USB Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 
     /* Start the Scheduler */
     kraken_start_scheduler();
