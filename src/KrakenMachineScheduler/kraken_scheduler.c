@@ -1,5 +1,6 @@
 #include "kraken_scheduler.h"
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
 #include <stdio.h>
 #include <stdlib.h>
 
