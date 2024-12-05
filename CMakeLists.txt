@@ -16,7 +16,7 @@ include(pico_sdk_import.cmake)
 set(FREERTOS_KERNEL_PATH ${CMAKE_CURRENT_LIST_DIR}/freertos)
 include(FreeRTOS_Kernel_import.cmake)
 
-project(KrakenMachineFirmware)
+project(KrakenMachineFirmware C CXX ASM)
 
 # Initialize Pico SDK
 pico_sdk_init()
@@ -37,46 +37,39 @@ target_link_libraries(KrakenMachineScheduler
     FreeRTOS-Kernel-Heap4
 )
 
+
 add_executable(KrakenMachineFirmware
     src/main.c
-    src/usb/usb_msc_driver.c
-    src/usb/usb_descriptors.c
+    src/usb/usb_msc.c
     src/fs/flash.c
     src/fs/fatfs_driver.c
-    src/usb/usb_msc_driver.c
-    src/usb/usb_descriptors.c
-    ${PICO_SDK_PATH}/lib/tinyusb/lib/fatfs/source/ff.c
-    ${PICO_SDK_PATH}/lib/tinyusb/lib/fatfs/source/ffsystem.c
-    ${PICO_SDK_PATH}/lib/tinyusb/lib/fatfs/source/ffunicode.c
-
 )
+
 
 target_include_directories(KrakenMachineFirmware PRIVATE
     include/
     src/KrakenMachineScheduler
     src/usb
     src/fs
+    src/io
     ${PICO_SDK_PATH}/lib/tinyusb/lib/fatfs/source
-    ${CMAKE_CURRENT_LIST_DIR}
-)
-
-# Define preprocessor directives for USB and Reset interface
-target_compile_definitions(KrakenMachineFirmware PRIVATE
-    PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE=1
-    PICO_STDIO_USB_RESET_INTERFACE_SUPPORT_RESET_TO_BOOTSEL=1
-    PICO_STDIO_USB_RESET_INTERFACE_SUPPORT_RESET_TO_FLASH_BOOT=0
-    PICO_STDIO_USB_RESET_BOOTSEL_INTERFACE_DISABLE_MASK=0
-    PICO_STDIO_USB_RESET_RESET_TO_FLASH_DELAY_MS=200
+    ${PICO_SDK_PATH}/lib/tinyusb/src
+    ${PICO_SDK_PATH}/lib/tinyusb/src/device
+    ${PICO_SDK_PATH}/lib/tinyusb/src/class/msc
 
 )
+
 
 # Link required libraries
 target_link_libraries(KrakenMachineFirmware
     pico_stdlib
     pico_multicore
-    tinyusb_device
+    tinyusb_additions
     tinyusb_board
-    KrakenMachineScheduler
+    tinyusb_device
+    hardware_flash
+    hardware_sync
+    KrakenMachineScheduler 
 )
 
 
@@ -84,6 +77,5 @@ target_link_libraries(KrakenMachineFirmware
 pico_enable_stdio_usb(KrakenMachineFirmware 1)
 pico_enable_stdio_uart(KrakenMachineFirmware 0)
 
-# Add extra outputs (e.g., UF2, BIN)
 pico_add_extra_outputs(KrakenMachineFirmware)
 
