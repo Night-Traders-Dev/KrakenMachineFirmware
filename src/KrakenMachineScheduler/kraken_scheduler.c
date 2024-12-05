@@ -94,18 +94,44 @@ void kraken_stop_timer(TimerHandle_t xTimer) {
     xTimerStop(xTimer, 0);
 }
 
+/* Event Group Management */
+EventGroupHandle_t kraken_create_event_group(void) {
+    return xEventGroupCreate();
+}
+
+EventBits_t kraken_set_event_bits(EventGroupHandle_t xEventGroup, EventBits_t uxBitsToSet) {
+    return xEventGroupSetBits(xEventGroup, uxBitsToSet);
+}
+
+EventBits_t kraken_clear_event_bits(EventGroupHandle_t xEventGroup, EventBits_t uxBitsToClear) {
+    return xEventGroupClearBits(xEventGroup, uxBitsToClear);
+}
+
+EventBits_t kraken_wait_for_event_bits(EventGroupHandle_t xEventGroup, EventBits_t uxBitsToWaitFor, BaseType_t xClearOnExit, BaseType_t xWaitForAllBits, TickType_t xTicksToWait) {
+    return xEventGroupWaitBits(xEventGroup, uxBitsToWaitFor, xClearOnExit, xWaitForAllBits, xTicksToWait);
+}
+
 /* Diagnostics */
 UBaseType_t kraken_get_number_of_tasks(void) {
     return uxTaskGetNumberOfTasks();
 }
 
 void kraken_get_task_stats(char *buffer, size_t bufferSize) {
-    vTaskList(buffer); // Ensure the buffer is large enough to hold task stats
+    vTaskList(buffer);
 }
 
 size_t kraken_get_free_heap_size(void) {
     return xPortGetFreeHeapSize();
 }
+
+void kraken_print_task_runtime_stats(char *buffer, size_t bufferSize) {
+    if (configGENERATE_RUN_TIME_STATS) {
+        vTaskGetRunTimeStats(buffer);
+    } else {
+        snprintf(buffer, bufferSize, "Run-time stats not enabled in FreeRTOSConfig.h");
+    }
+}
+
 
 /* FreeRTOS Hook Functions */
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
@@ -127,10 +153,52 @@ void vApplicationMallocFailedHook(void) {
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
     (void)pcTaskName;
     (void)xTask;
-    for (;;); // Infinite loop
+
+    /* Infinite loop to halt execution on stack overflow */
+    for (;;);
 }
 
-/* Debug Logging */
+/* Debugging Enhancements */
 void kraken_log(const char *message) {
     printf("[KRAKEN_SCHEDULER] %s\n", message);
+}
+
+void kraken_assert(bool condition, const char *message) {
+    if (!condition) {
+        printf("[ASSERTION FAILED] %s\n", message);
+        for (;;); // Infinite loop to halt execution
+    }
+}
+
+/* Scheduler Control */
+void kraken_start_scheduler(void) {
+    vTaskStartScheduler();
+}
+
+void kraken_stop_scheduler(void) {
+    vTaskEndScheduler(); // Typically not implemented in most ports
+}
+
+void kraken_reset_scheduler(void) {
+    vTaskEndScheduler();
+    /* Add platform-specific reset logic if needed */
+    watchdog_reboot(0, 0, 0); // Example reboot
+}
+
+/* Multicore Management */
+void kraken_launch_core1(TaskFunction_t core1Task, void *params) {
+    multicore_launch_core1(core1Task);
+}
+
+void kraken_yield_core(void) {
+    taskYIELD();
+}
+
+/* System Utilities */
+void kraken_delay_ms(uint32_t ms) {
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}
+
+void kraken_restart_system(void) {
+    watchdog_reboot(0, 0, 0); // Reboot the system using the watchdog timer
 }
