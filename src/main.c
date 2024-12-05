@@ -23,9 +23,9 @@ void led_blink_task(void *parameters) {
             gpio_put(PICO_DEFAULT_LED_PIN, 1);
             kraken_log("LED ON");
             vTaskDelay(pdMS_TO_TICKS(500));
-
             /* Set the LED OFF bit */
             kraken_set_event_bits(led_event_group, EVENT_LED_OFF_BIT);
+            vTaskDelay(pdMS_TO_TICKS(5000));
         }
     }
 }
