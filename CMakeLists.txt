@@ -40,22 +40,12 @@ target_link_libraries(KrakenMachineScheduler
 
 add_executable(KrakenMachineFirmware
     src/main.c
-    src/usb/usb_msc.c
-    src/fs/flash.c
-    src/fs/fatfs_driver.c
 )
 
 
 target_include_directories(KrakenMachineFirmware PRIVATE
     include/
     src/KrakenMachineScheduler
-    src/usb
-    src/fs
-    src/io
-    ${PICO_SDK_PATH}/lib/tinyusb/lib/fatfs/source
-    ${PICO_SDK_PATH}/lib/tinyusb/src
-    ${PICO_SDK_PATH}/lib/tinyusb/src/device
-    ${PICO_SDK_PATH}/lib/tinyusb/src/class/msc
 
 )
 
@@ -64,18 +54,8 @@ target_include_directories(KrakenMachineFirmware PRIVATE
 target_link_libraries(KrakenMachineFirmware
     pico_stdlib
     pico_multicore
-    tinyusb_additions
-    tinyusb_board
-    tinyusb_device
-    hardware_flash
-    hardware_sync
     KrakenMachineScheduler 
 )
 
 
-# Enable USB and disable UART for stdio
-pico_enable_stdio_usb(KrakenMachineFirmware 1)
-pico_enable_stdio_uart(KrakenMachineFirmware 0)
-
 pico_add_extra_outputs(KrakenMachineFirmware)
-
