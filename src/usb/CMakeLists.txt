@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #include(${CMAKE_CURRENT_SOURCE_DIR}/../../../hw/bsp/family_support.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/tinyusb/hw/bsp/family_support.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../tinyusb/hw/bsp/family_support.cmake)
 
 
 # gets PROJECT name for the example (e.g. <BOARD>-<DIR_NAME>)
@@ -22,14 +22,14 @@ add_executable(${PROJECT})
 
 # Example source
 target_sources(${PROJECT} PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/msc_disk.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/usb_descriptors.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/main.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/msc_disk.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
   )
 
 # Example include
 target_include_directories(${PROJECT} PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
 # Configure compilation flags and libraries for the example... see the corresponding function
