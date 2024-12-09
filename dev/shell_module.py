@@ -1,10 +1,12 @@
 import gc
-import supervisor
 import board
 import microcontroller
 import os
 import wifi
+import socketpool
 import pyRTOS
+from mailbox import temp_queue, temp_buffer
+import time
 
 BUFFER_SIZE = 1024
 
@@ -61,65 +63,54 @@ def handle_command(command):
 
     return response, reboot_flag, exit_flag
 
-def handle_client(self):
-    """Handle a single client connection."""
-    print("Shell Task Starting")
-    yield
-    while True:
-        print("handle_client waiting for msg")
-        msgs = self.recv()
-        for msg in msgs:
-            if msg.source == "server_task":
-                client_socket = msg.message 
-                print("Client connected!")
-                gc.collect()
-                try:
-                    buffer = bytearray(BUFFER_SIZE)
-                    reboot_flag = False
-                    exit_flag = False
-                    client_socket.send(b"Welcome to the shell!\nType 'help' for commands.\n$ ")
-                    while not reboot_flag and not exit_flag:
-                        # Receive data from client
-                        bytes_received = client_socket.recv_into(buffer)
-                        if bytes_received == 0:  # No more data; client disconnected
-                            break
+def handle_client(client_socket):
+    buffer = bytearray(BUFFER_SIZE)
+    reboot_flag = False
+    exit_flag = False
+    client_socket.send(b"Welcome to the shell!\nType 'help' for commands.\n$ ")
+    while not reboot_flag and not exit_flag:
+        # Receive data from client
+        bytes_received = client_socket.recv_into(buffer)
+        if bytes_received == 0:  # No more data; client disconnected
+            break
 
-                        # Extract the actual data received
-                        data = buffer[:bytes_received]
-                        print(f"Raw data received: {data}")
+        # Extract the actual data received
+        data = buffer[:bytes_received]
+        print(f"Raw data received: {data}")
 
-                        # Assume plaintext for debugging
-                        decrypted_data = data.decode("utf-8").strip()
-                        print(f"Command received: {decrypted_data}")
+        # Assume plaintext for debugging
+        decrypted_data = data.decode("utf-8").strip()
+        print(f"Command received: {decrypted_data}")
 
-                        # Handle the command
-                        response, reboot_flag, exit_flag = handle_command(decrypted_data)
-                        client_socket.send(response.encode("utf-8"))
-                        if not reboot_flag and not exit_flag:
-                            client_socket.send(b"> ")
-                            gc.collect()
-                            yield
-                    if reboot_flag:
-                        microcontroller.reset()  # Reboot the system
-                except Exception as e:
-                    print(f"Error: {e}")
-                finally:
-                    print("Client disconnected.")
-                    client_socket.close()
-                    yield
+        # Handle the command
+        response, reboot_flag, exit_flag = handle_command(decrypted_data)
+        client_socket.send(response.encode("utf-8"))
+        if not reboot_flag and not exit_flag:
+            client_socket.send(b"> ")
+            gc.collect()
+            yield
+        if reboot_flag:
+            microcontroller.reset()  # Reboot the system
+
 
 
 def server_task(self):
     """Task to handle incoming connections."""
     print("Server Task Starting")
     PORT = 23
+    server_socket = None
     yield
     while True:
         print("server_task waiting for msg")
-        msgs = self.recv()
-        for msg in msgs:
-            if msg.source == "wifiman" and msg.message == "start":
-                connection = get_radio()
+        if wifi.radio.ipv4_address is None:
+            print("pass")
+            yield [pyRTOS.timeout(2)]
+        elif server_socket is None and wifi.radio.ipv4_address:
+            yield [temp_queue.recv(temp_buffer), pyRTOS.timeout(5)]
+            payload = temp_buffer.pop()
+            print(f"server:{temp_buffer}{payload}")
+            if payload[0] == "server" and payload[2] == "start":
+                connection = wifi.radio
                 pool = socketpool.SocketPool(connection)
                 server_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
 
@@ -127,13 +118,10 @@ def server_task(self):
                 server_socket.bind(("0.0.0.0", PORT))
                 server_socket.listen(1)
                 print(f"Server listening on port {PORT}")
-                yield
-            elif msg.source == "client_msg":
                 while True:
                     print("Waiting for a client...")
                     client_socket, addr = server_socket.accept()
                     print(f"Accepted connection from {addr}")
-            else:
-                yield
+                    handle_client(client_socket)
 
             

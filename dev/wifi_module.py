@@ -11,23 +11,25 @@ def connect_to_wifi(self):
     """Connects to Wi-Fi with retry logic."""
     print("WifiMan Task Starting")
     yield
-    retries = 5
     while True:
         print("wifiman waiting for msg")
+        if wifi.radio.ipv4_address is None:
+            print("1")
+            yield [pyRTOS.timeout(2)]
+        else:
+            print("6")
+            yield [temp_queue.send(["server", "wifi", "start"])]
+        print("2")
         yield [temp_queue.recv(temp_buffer)]
         payload = temp_buffer.pop()
-        if temp_buffer:
-            print(f"Message: {payload}")
-        for attempt in range(retries):
+        print(f"wifi:{temp_buffer}{payload}")
+        if payload:
             try:
-                if wifi.radio.enabled and wifi.radio.ipv4_address is None:
-                    print(f"Connecting to Wi-Fi (attempt {attempt + 1}/{retries})...")
-                    print(payload)
-                    wifi.radio.connect(payload[0], payload[1], timeout=5.0)
-                    print(f"Connected to Wi-Fi, IP address: {wifi.radio.ipv4_address}")
-                    yield [temp_queue.nb_send(["server", "wifi", "start"])]
-                else:
-                    wifi.radio.enabled = True
+                print(f"Connecting to Wi-Fi...")
+                wifi.radio.connect(payload[1], payload[2], timeout=5.0)
+                print(f"Connected to Wi-Fi, IP address: {wifi.radio.ipv4_address}")
+                print("3")
+                yield
             except Exception as e:
                 print(f"Failed to connect: {e}")
                 print(f"Wireless Card On: {wifi.radio.enabled}")
@@ -38,10 +40,8 @@ def connect_to_wifi(self):
                 wifi.radio.enabled = True
                 print(f"Wireless Card On: {wifi.radio.enabled}")
                 time.sleep(2)
-            
-        print("Failed to connect to Wi-Fi after multiple attempts...Rebooting")
-        time.sleep(30)
-        microcontroller.reset()
+                print("5")
+                yield
 
 
 def get_radio():
